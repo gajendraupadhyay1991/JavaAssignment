@@ -1,6 +1,7 @@
 package com.db.awmd.challenge.web;
 
 import com.db.awmd.challenge.domain.Account;
+import com.db.awmd.challenge.domain.Transaction;
 import com.db.awmd.challenge.exception.DuplicateAccountIdException;
 import com.db.awmd.challenge.service.AccountsService;
 import javax.validation.Valid;
@@ -24,27 +25,51 @@ public class AccountsController {
   private final AccountsService accountsService;
 
   @Autowired
-  public AccountsController(AccountsService accountsService) {
+  public AccountsController(AccountsService accountsService) 
+  {
     this.accountsService = accountsService;
   }
 
   @PostMapping(consumes = MediaType.APPLICATION_JSON_VALUE)
-  public ResponseEntity<Object> createAccount(@RequestBody @Valid Account account) {
+  public ResponseEntity<Object> createAccount(@RequestBody @Valid Account account) 
+  {
     log.info("Creating account {}", account);
 
-    try {
-    this.accountsService.createAccount(account);
-    } catch (DuplicateAccountIdException daie) {
-      return new ResponseEntity<>(daie.getMessage(), HttpStatus.BAD_REQUEST);
+    try 
+    {
+    	this.accountsService.createAccount(account);
+    } 
+    catch (DuplicateAccountIdException daie) 
+    {
+    	return new ResponseEntity<>(daie.getMessage(), HttpStatus.BAD_REQUEST);
     }
-
     return new ResponseEntity<>(HttpStatus.CREATED);
   }
 
+  
   @GetMapping(path = "/{accountId}")
-  public Account getAccount(@PathVariable String accountId) {
-    log.info("Retrieving account for id {}", accountId);
-    return this.accountsService.getAccount(accountId);
+  public Account getAccount(@PathVariable String accountId) 
+  {
+	  log.info("Retrieving account for id {}", accountId);
+	  return this.accountsService.getAccount(accountId);
+  }
+  
+  @RequestMapping("/transfer")
+  @PostMapping(consumes = MediaType.APPLICATION_JSON_VALUE)
+  public ResponseEntity<Object> transferBalance(@RequestBody @Valid Transaction transaction)
+  {
+	log.info("Transfer Balance {}", transaction.getBalance());
+	
+	try 
+	{
+		this.accountsService.transferBalance(transaction);
+	} 
+	catch (DuplicateAccountIdException daie) 
+	{
+		return new ResponseEntity<>(daie.getMessage(), HttpStatus.BAD_REQUEST);
+	}
+
+    return new ResponseEntity<>(HttpStatus.OK);
   }
 
 }
