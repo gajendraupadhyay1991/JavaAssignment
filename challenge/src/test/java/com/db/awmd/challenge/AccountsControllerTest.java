@@ -8,8 +8,13 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.setup.MockMvcBuilders.webAppContextSetup;
 
 import com.db.awmd.challenge.domain.Account;
+import com.db.awmd.challenge.domain.TransactionDetails;
+import com.db.awmd.challenge.repository.AccountsRepositoryInMemory;
 import com.db.awmd.challenge.service.AccountsService;
 import java.math.BigDecimal;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -30,10 +35,11 @@ public class AccountsControllerTest {
 
   @Autowired
   private AccountsService accountsService;
-
+  
   @Autowired
   private WebApplicationContext webApplicationContext;
 
+  
   @Before
   public void prepareMockMvc() {
     this.mockMvc = webAppContextSetup(this.webApplicationContext).build();
@@ -97,8 +103,14 @@ public class AccountsControllerTest {
     Account account = new Account(uniqueAccountId, new BigDecimal("123.45"));
     this.accountsService.createAccount(account);
     this.mockMvc.perform(get("/v1/accounts/" + uniqueAccountId))
-      .andExpect(status().isOk())
-      .andExpect(
-        content().string("{\"accountId\":\"" + uniqueAccountId + "\",\"balance\":123.45}"));
+      .andExpect(content().string("{\"accountId\":\"" + uniqueAccountId + "\",\"balance\":123.45}"));
+  }
+  
+  @Test
+  public void transferBalance() throws Exception
+  {
+	  this.mockMvc.perform(post("/v1/accounts/transfer").contentType(MediaType.APPLICATION_JSON)
+      .content("{\"accountFromId\":\"Id-123\",\"accountToId\":\"Id-456\",\"balance\":50}"))
+      .andExpect(status().isOk());
   }
 }

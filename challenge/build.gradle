@@ -23,8 +23,9 @@ repositories {
 }
 
 dependencies {
-  compileOnly("org.projectlombok:lombok:1.16.16")
   compile("org.springframework.boot:spring-boot-starter-web")
   compileOnly("org.projectlombok:lombok")
   testCompile("org.springframework.boot:spring-boot-starter-test")
+  testCompile("org.mockito:mockito-all")
+  testCompile("org.mockito:mockito-core")
 }

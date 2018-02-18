@@ -1,7 +1,7 @@
 package com.db.awmd.challenge.service;
 
 import com.db.awmd.challenge.domain.Account;
-import com.db.awmd.challenge.domain.Transaction;
+import com.db.awmd.challenge.domain.TransactionDetails;
 import com.db.awmd.challenge.repository.AccountsRepository;
 import lombok.Getter;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,11 +19,6 @@ public class AccountsService
   public AccountsService(AccountsRepository accountsRepository) {
     this.accountsRepository = accountsRepository;
   }
-
-  public void transferBalance(Transaction transferAccount)
-  {
-	  this.accountsRepository.transferBalance(transferAccount);
-  }
   
   public void createAccount(Account account) 
   {
@@ -33,5 +28,10 @@ public class AccountsService
   public Account getAccount(String accountId) 
   {
     return this.accountsRepository.getAccount(accountId);
+  }
+  
+  public void transferBalance(TransactionDetails transaction)
+  {
+	  this.accountsRepository.transferBalance(transaction);
   }
 }

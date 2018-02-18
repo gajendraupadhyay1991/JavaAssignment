@@ -7,8 +7,9 @@ import java.util.concurrent.ConcurrentHashMap;
 import org.springframework.stereotype.Repository;
 
 import com.db.awmd.challenge.domain.Account;
-import com.db.awmd.challenge.domain.Transaction;
+import com.db.awmd.challenge.domain.TransactionDetails;
 import com.db.awmd.challenge.exception.DuplicateAccountIdException;
+import com.db.awmd.challenge.service.EmailNotificationService;
 import com.db.awmd.challenge.web.AccountsController;
 
 import lombok.extern.slf4j.Slf4j;
@@ -17,7 +18,6 @@ import lombok.extern.slf4j.Slf4j;
 @Repository
 public class AccountsRepositoryInMemory implements AccountsRepository 
 {
-
   private final Map<String, Account> accounts = new ConcurrentHashMap<>();
 
   @Override
@@ -36,7 +36,7 @@ public class AccountsRepositoryInMemory implements AccountsRepository
   }
   
   @Override
-  public void transferBalance(Transaction transferAccount) 
+  public void transferBalance(TransactionDetails transferAccount) 
   {  	
 	  if(transferAccount == null)
 	  {
@@ -44,14 +44,9 @@ public class AccountsRepositoryInMemory implements AccountsRepository
 	  }
 	  else
 	  {
-		  if(accounts.containsKey(transferAccount.getAccountToId()))
+		  if(accounts.containsKey(transferAccount.getAccountToId()) || accounts.containsKey(transferAccount.getAccountFromId()))
 		  {
-			  BigDecimal balance = BigDecimal.ZERO;
-			  Account account = accounts.get(transferAccount.getAccountToId());
-			  balance = account.getBalance();
-			  BigDecimal amount = transferAccount.getBalance();
-			  account.setBalance(balance.add(amount));
-			  accounts.replace(account.getAccountId(), account);
+			  transactionProcess(transferAccount);
 		  }
 		  else
 		  {
@@ -59,6 +54,35 @@ public class AccountsRepositoryInMemory implements AccountsRepository
 		  }
 	  }
   }
+
+	private void transactionProcess(TransactionDetails transferAccount) 
+	{
+		EmailNotificationService emailNotificationService = new EmailNotificationService();
+		BigDecimal senderBalance = BigDecimal.ZERO;
+		BigDecimal recieverBalance = BigDecimal.ZERO;
+		Account recieverAccount = accounts.get(transferAccount.getAccountToId());
+		Account senderAccount = accounts.get(transferAccount.getAccountFromId());
+		
+		recieverBalance = recieverAccount.getBalance();
+		senderBalance = senderAccount.getBalance();
+		
+		BigDecimal amount = transferAccount.getBalance();
+		
+		if(senderBalance.compareTo(amount)>=0)
+		{
+			recieverAccount.setBalance(recieverBalance.add(amount));
+			senderAccount.setBalance(senderBalance.subtract(amount));
+			accounts.replace(senderAccount.getAccountId(), senderAccount);
+			emailNotificationService.notifyAboutTransfer(recieverAccount, String.valueOf(amount));
+			accounts.replace(recieverAccount.getAccountId(), recieverAccount);
+			emailNotificationService.notifyAboutTransfer(senderAccount, String.valueOf(amount));
+			log.info("Transaction is done successfully!");
+		}
+		else
+		{
+			log.error("Transaction failed due to insufficient balance in account {}",senderAccount.getAccountId());
+		}
+	}
 
   @Override
   public void clearAccounts() {
