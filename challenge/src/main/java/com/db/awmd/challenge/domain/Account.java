@@ -11,6 +11,9 @@ import org.hibernate.validator.constraints.NotEmpty;
 @Data
 public class Account 
 {
+  /**
+   * Account - To have details of accountId and balance
+   */
 
   @NotNull
   @NotEmpty

@@ -1,20 +1,20 @@
 package com.db.awmd.challenge.domain;
 
-import com.db.awmd.challenge.repository.AccountsRepository;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.math.BigDecimal;
 import javax.validation.constraints.Min;
 import javax.validation.constraints.NotNull;
 import lombok.Data;
-import lombok.Getter;
-import lombok.Setter;
 
 import org.hibernate.validator.constraints.NotEmpty;
 
 @Data
-public class TransactionDetails {
-
+public class TransactionDetails 
+{
+  /**
+   * TransactionDetails - To have transaction details 
+   */
   @NotNull
   @NotEmpty
   private final String accountFromId;

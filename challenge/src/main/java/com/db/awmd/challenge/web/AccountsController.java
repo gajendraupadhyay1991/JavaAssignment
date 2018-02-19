@@ -20,8 +20,11 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/v1/accounts")
 @Slf4j
-public class AccountsController {
-
+public class AccountsController 
+{
+  /**
+   * AccountsController - To provide Rest endpoints of createAccount, getAccount and transferBalance
+   */
   private final AccountsService accountsService;
 
   @Autowired

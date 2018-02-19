@@ -10,6 +10,9 @@ import org.springframework.stereotype.Service;
 @Service
 public class AccountsService 
 {
+	/**
+	 * AccountsService - To provide services of createAccount, getAccount and transferBalance
+	 */
 
   @Getter
   private final AccountsRepository accountsRepository;
@@ -34,4 +37,5 @@ public class AccountsService
   {
 	  this.accountsRepository.transferBalance(transaction);
   }
+  
 }

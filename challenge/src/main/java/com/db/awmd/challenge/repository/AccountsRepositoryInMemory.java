@@ -8,9 +8,9 @@ import org.springframework.stereotype.Repository;
 
 import com.db.awmd.challenge.domain.Account;
 import com.db.awmd.challenge.domain.TransactionDetails;
+import com.db.awmd.challenge.exception.AccountDoesNotExistException;
 import com.db.awmd.challenge.exception.DuplicateAccountIdException;
 import com.db.awmd.challenge.service.EmailNotificationService;
-import com.db.awmd.challenge.web.AccountsController;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -18,16 +18,27 @@ import lombok.extern.slf4j.Slf4j;
 @Repository
 public class AccountsRepositoryInMemory implements AccountsRepository 
 {
+  /**
+   * AccountsRepositoryInMemory - To have createAccount, getAccount, transferBalance and clearAccounts
+   */
   private final Map<String, Account> accounts = new ConcurrentHashMap<>();
 
   @Override
   public void createAccount(Account account) throws DuplicateAccountIdException 
   {
-    Account previousAccount = accounts.putIfAbsent(account.getAccountId(), account);
-    if (previousAccount != null) 
-    {
-    	throw new DuplicateAccountIdException("Account id " + account.getAccountId() + " already exists!");
-    }
+	  if(account.getBalance().signum() != -1)
+	  {
+		Account previousAccount = accounts.putIfAbsent(account.getAccountId(), account);
+		if (previousAccount != null) 
+		{
+			throw new DuplicateAccountIdException("Account id " + account.getAccountId() + " already exists!");
+		}
+	  }
+	  else
+	  {
+		  log.error("Negative balance is not allowed!");
+	  }
+    
   }
 
   @Override
@@ -40,35 +51,61 @@ public class AccountsRepositoryInMemory implements AccountsRepository
   {  	
 	  if(transferAccount == null)
 	  {
-		  log.error("Transaction detail is null!");
+		  throw new AccountDoesNotExistException("Transaction details does not exists!");
 	  }
 	  else
 	  {
-		  if(accounts.containsKey(transferAccount.getAccountToId()) || accounts.containsKey(transferAccount.getAccountFromId()))
+		  if(accounts.containsKey(transferAccount.getAccountToId()) && accounts.containsKey(transferAccount.getAccountFromId()))
 		  {
 			  transactionProcess(transferAccount);
 		  }
 		  else
 		  {
-			  log.error("Transfer account does not exist!");
+			  log.error("Account id does not exists!");
 		  }
 	  }
   }
 
-	private void transactionProcess(TransactionDetails transferAccount) 
+ /**
+  * transactionProcess - To process the transaction within exists accounts
+  * @param transferDetails
+  */
+	private void transactionProcess(TransactionDetails transferDetails) 
 	{
 		EmailNotificationService emailNotificationService = new EmailNotificationService();
 		BigDecimal senderBalance = BigDecimal.ZERO;
 		BigDecimal recieverBalance = BigDecimal.ZERO;
-		Account recieverAccount = accounts.get(transferAccount.getAccountToId());
-		Account senderAccount = accounts.get(transferAccount.getAccountFromId());
-		
+		Account recieverAccount = accounts.get(transferDetails.getAccountToId());
+		Account senderAccount = accounts.get(transferDetails.getAccountFromId());
 		recieverBalance = recieverAccount.getBalance();
 		senderBalance = senderAccount.getBalance();
 		
-		BigDecimal amount = transferAccount.getBalance();
+		BigDecimal amount = transferDetails.getBalance();
 		
 		if(senderBalance.compareTo(amount)>=0)
+		{
+			processTransaction(emailNotificationService, senderBalance, recieverBalance, recieverAccount, senderAccount,
+					amount);
+		}
+		else
+		{
+			log.error("Transaction failed due to insufficient balance in account {}",senderAccount.getAccountId());
+		}
+	}
+
+	/**
+	 * processTransaction - To process the transfer of balance
+	 * @param emailNotificationService
+	 * @param senderBalance
+	 * @param recieverBalance
+	 * @param recieverAccount
+	 * @param senderAccount
+	 * @param amount
+	 */
+	private void processTransaction(EmailNotificationService emailNotificationService, BigDecimal senderBalance,
+		BigDecimal recieverBalance, Account recieverAccount, Account senderAccount, BigDecimal amount) 
+	{
+		if(recieverAccount.getAccountId() != senderAccount.getAccountId())
 		{
 			recieverAccount.setBalance(recieverBalance.add(amount));
 			senderAccount.setBalance(senderBalance.subtract(amount));
@@ -80,15 +117,13 @@ public class AccountsRepositoryInMemory implements AccountsRepository
 		}
 		else
 		{
-			log.error("Transaction failed due to insufficient balance in account {}",senderAccount.getAccountId());
+			log.error("Duplicates account Id!");
 		}
+		
 	}
 
   @Override
   public void clearAccounts() {
     accounts.clear();
   }
-
-
-
 }

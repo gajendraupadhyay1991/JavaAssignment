@@ -1,4 +1,4 @@
-package com.db.awmd.challenge;
+package com.db.awmd.challenge.web.controller;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -8,18 +8,15 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.setup.MockMvcBuilders.webAppContextSetup;
 
 import com.db.awmd.challenge.domain.Account;
-import com.db.awmd.challenge.domain.TransactionDetails;
-import com.db.awmd.challenge.repository.AccountsRepositoryInMemory;
 import com.db.awmd.challenge.service.AccountsService;
 import java.math.BigDecimal;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.mockito.SpyBean;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.test.context.web.WebAppConfiguration;
@@ -29,11 +26,12 @@ import org.springframework.web.context.WebApplicationContext;
 @RunWith(SpringRunner.class)
 @SpringBootTest
 @WebAppConfiguration
-public class AccountsControllerTest {
+public class AccountsControllerTest 
+{
 
   private MockMvc mockMvc;
 
-  @Autowired
+  @SpyBean
   private AccountsService accountsService;
   
   @Autowired
@@ -56,6 +54,12 @@ public class AccountsControllerTest {
     Account account = accountsService.getAccount("Id-123");
     assertThat(account.getAccountId()).isEqualTo("Id-123");
     assertThat(account.getBalance()).isEqualByComparingTo("1000");
+    
+    this.mockMvc.perform(post("/v1/accounts").contentType(MediaType.APPLICATION_JSON)
+    	      .content("{\"accountId\":\"Id-456\",\"balance\":500}")).andExpect(status().isCreated());
+    account = accountsService.getAccount("Id-456");
+    assertThat(account.getAccountId()).isEqualTo("Id-456");
+    assertThat(account.getBalance()).isEqualByComparingTo("500");
   }
 
   @Test
